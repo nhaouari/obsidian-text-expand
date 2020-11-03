@@ -17,7 +17,7 @@ function inlineLog(str: string) {
 
 export default class TextExpander extends Plugin {
     delay = 2000;
-
+    textExtraction= "Activated";
     onload() {
         this.addSettingTab(new SettingTab(this.app, this));
 
@@ -47,15 +47,32 @@ export default class TextExpander extends Plugin {
 
         const reformatLinks = (links: Files[], mapFunc: (s: string) => string): string => {
             const currentView = this.app.workspace.activeLeaf.view
+           // const query:string=  this.app.workspace.getLeavesOfType('search')[0].view.searchQuery.query;
+            const size=10;
 
-            if (currentView instanceof FileView) {
+          /*  if (currentView instanceof FileView) {
                 return links.map(e => e.file.name)
                     .filter(e => currentView.file.name !== e)
                     .map(mapFunc).join('\n')
             }
+            */
+            return links.filter(ele=>ele.file.name!==currentView.file.name).map((ele)=>{
+                let extractedText = "";
+                const ref:string= mapFunc(ele.file.name);
+                if(this.textExtraction=="Activated"){
+                    ele.result.content.forEach(position => {
+                        const min:Number=Math.max(position[0]-size,0);
+                        const max:Number=Math.min(position[1]+size,ele.content.length-1);
+                        console.log(ele.content,min,max);
+                        extractedText+=ele.content.substring(min,max)+"\n"; 
+                    });
+                }
+                return extractedText+ref;
+            }).join('\n')
 
-            return links.map(e => e.file.name).map(mapFunc).join('\n')
-        }
+            //return links.map(e => e.file.name).map(mapFunc).join('\n')
+            
+            }
 
         function getLastLineNum(doc: CodeMirror.Doc, line = 0): number {
             const lineNum = line === 0
@@ -76,7 +93,12 @@ export default class TextExpander extends Plugin {
             let cmDoc = null as CodeMirror.Doc || null
             // @ts-ignore
             const globalSearchFn = this.app.internalPlugins.getPluginById('global-search').instance.openGlobalSearch.bind(this)
+
+            console.log(this.app);
+            console.log(globalSearchFn);
+
             const search = (query: string) => globalSearchFn(inlineLog(query))
+
             const getFoundFilenames = (mapFunc: (s: string) => string, callback: (s: string) => any) => {
                 const searchLeaf = this.app.workspace.getLeavesOfType('search')[0]
                 searchLeaf.open(searchLeaf.view)
@@ -166,6 +188,16 @@ class SettingTab extends PluginSettingTab {
                 slider.setValue(this.plugin.delay)
                 slider.onChange(value => this.plugin.delay = value)
                 slider.setDynamicTooltip()
+            })
+        
+        new Setting(containerEl)
+            .setName('Text Extraction')
+            .setDesc('Add extracted text to the found results.')
+            .addDropdown((cb)=>{
+                cb.addOption("Activated","Activated");
+                cb.addOption("Disabled","Disabled");
+                cb.setValue(this.plugin.textExtraction);
+                cb.onChange(value => this.plugin.textExtraction = value);
             })
     }
 }

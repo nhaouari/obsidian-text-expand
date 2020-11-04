@@ -1,4 +1,6 @@
 import {App, View, Plugin, PluginSettingTab, Setting, TFile, FileView, MarkdownView} from 'obsidian';
+import removeMd from "remove-markdown";
+
 
 interface Config {
     id: string
@@ -18,6 +20,7 @@ function inlineLog(str: string) {
 export default class TextExpander extends Plugin {
     delay = 2000;
     textExtraction= "Activated";
+    defaultSize=30;
     onload() {
         this.addSettingTab(new SettingTab(this.app, this));
 
@@ -45,29 +48,48 @@ export default class TextExpander extends Plugin {
             },
         ]
 
-        const reformatLinks = (links: Files[], mapFunc: (s: string) => string): string => {
+        const reformatLinks = (links: Files[], mapFunc: (s: string) => string,size:number): string => {
             const currentView = this.app.workspace.activeLeaf.view
-           // const query:string=  this.app.workspace.getLeavesOfType('search')[0].view.searchQuery.query;
-            const size=10;
-
+            const query:string=  this.app.workspace.getLeavesOfType('search')[0].view.searchQuery.query;
+        
           /*  if (currentView instanceof FileView) {
                 return links.map(e => e.file.name)
                     .filter(e => currentView.file.name !== e)
                     .map(mapFunc).join('\n')
             }
             */
+           console.log(links);
             return links.filter(ele=>ele.file.name!==currentView.file.name).map((ele)=>{
-                let extractedText = "";
                 const ref:string= mapFunc(ele.file.name);
-                if(this.textExtraction=="Activated"){
+                const titleSize=20;
+
+                let extractedText=ref;
+               if(this.textExtraction=="Activated"){
+                    extractedText = "# "+ele.file.name+" ("+ele.result.content.length+")"+"\n"+ref+"\n";
+                    let minIndex= 9999999;
+                    let maxIndex= 0;
+                
                     ele.result.content.forEach(position => {
+                        const minTitle:Number=Math.max(position[0]-titleSize,0);
+                        const maxTitle:Number=Math.min(position[1]+titleSize,ele.content.length-1);
                         const min:Number=Math.max(position[0]-size,0);
                         const max:Number=Math.min(position[1]+size,ele.content.length-1);
-                        console.log(ele.content,min,max);
-                        extractedText+=ele.content.substring(min,max)+"\n"; 
+
+
+                       // console.log({min,max,minIndex,maxIndex})
+                       if(!((min>=minIndex && min <= maxIndex) || (max>=minIndex && max <= maxIndex))){ 
+                        minIndex=Math.min(minIndex,position[0]);
+                        maxIndex=Math.max(maxIndex,position[1]);
+
+                        extractedText+="## ..."+removeMd(ele.content.substring(minTitle,maxTitle).replace("\n"," "))+"...\n"; 
+                        //console.log(ele.content.substring(min,max));
+                        extractedText+="\t"+removeMd(ele.content.substring(min,max))+"\n\n"; 
+                        }
                     });
                 }
-                return extractedText+ref;
+                extractedText.replace(query,"*"+query+"*");
+
+                return extractedText;
             }).join('\n')
 
             //return links.map(e => e.file.name).map(mapFunc).join('\n')
@@ -94,19 +116,18 @@ export default class TextExpander extends Plugin {
             // @ts-ignore
             const globalSearchFn = this.app.internalPlugins.getPluginById('global-search').instance.openGlobalSearch.bind(this)
 
-            console.log(this.app);
-            console.log(globalSearchFn);
 
             const search = (query: string) => globalSearchFn(inlineLog(query))
 
-            const getFoundFilenames = (mapFunc: (s: string) => string, callback: (s: string) => any) => {
+            const getFoundFilenames = (mapFunc: (s: string) => string, callback: (s: string) => any,size:number) => {
                 const searchLeaf = this.app.workspace.getLeavesOfType('search')[0]
                 searchLeaf.open(searchLeaf.view)
                     .then((view: View) => setTimeout(() => {
                         // Using undocumented feature
                         // @ts-ignore
-                        const result = reformatLinks(view.dom.resultDoms, mapFunc)
+                        const result = reformatLinks(view.dom.resultDoms, mapFunc,size)
                         callback(result)
+                        this.app.commands.commands["editor:fold-all"].checkCallback();
                     }, this.delay))
             }
 
@@ -134,7 +155,13 @@ export default class TextExpander extends Plugin {
                 ? getLastLineNum(cmDoc)
                 : curNum
 
-            const searchQuery = curText.replace('{{', '').replace('}}', '')
+            let searchQuery = curText.replace('{{', '').replace('}}', '')
+            let size = this.defaultSize;
+             if(searchQuery.indexOf("/") !== -1) {
+                size = +searchQuery.split("/")[1];
+                searchQuery = searchQuery.split("/")[0];
+            }
+
             const embedFormula = '```expander\n' +
                 '{{' + searchQuery + '}}\n' +
                 '```\n'
@@ -145,7 +172,7 @@ export default class TextExpander extends Plugin {
             )
 
             search(inlineLog(searchQuery))
-            getFoundFilenames(mapFunc, replaceLine)
+            getFoundFilenames(mapFunc, replaceLine,size)
         }
 
         config.forEach(e => {
@@ -198,6 +225,14 @@ class SettingTab extends PluginSettingTab {
                 cb.addOption("Disabled","Disabled");
                 cb.setValue(this.plugin.textExtraction);
                 cb.onChange(value => this.plugin.textExtraction = value);
+            })
+        
+        new Setting(containerEl)
+            .setName('Default Size')
+            .setDesc('The number of the chars to extract before and after the found text')
+            .addText((text)=>{
+                text.setValue(this.plugin.defaultSize.toString());
+                text.onChange(value => this.plugin.defaultSize = +value);
             })
     }
 }

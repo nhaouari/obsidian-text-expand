@@ -1,9 +1,9 @@
 {
-  "id": "mrj-text-expand",
-  "name": "Text {{expand}}",
-  "version": "0.4.0",
-  "description": "Search and paste/transclude links to founded files.",
+  "id": "mrj-text-expand-witb-text-extraction",
+  "name": "Text+Text Extraction {{expand/number}}",
+  "version": "0.4.1",
+  "description": " Small hack to add text extraction to Search apaste/transclude links to founded files the plugin mrj-text-expand-witb-text of MrJackphil  ",
   "isDesktopOnly": false,
-  "author": "MrJackphil",
-  "authorUrl": "https://mrjackphil.com"
+  "author": "Noureddine Haouari",
+  "authorUrl": "https://haouari.com"
 }

@@ -2,6 +2,7 @@
   "id": "searchpp",
   "name": "Search++",
   "version": "0.0.1",
+  "repo": "https://github.com/nhaouari/searchpp",
   "description": "Most of the code is based on the plugin mrj-text-expand-witb-text of MrJackphil with goal of gathering all related information in one note and work on them.",
   "isDesktopOnly": false,
   "author": "Noureddine Haouari",

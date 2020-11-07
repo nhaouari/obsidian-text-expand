@@ -1,5 +1,5 @@
 # Search++
-![](./screenshots/1.gif)
+![](./screenshots/2.gif)
 
 This is plugin is based on the code of [mrj-text-expand](https://github.com/nhaouari/obsidian-text-expand), it inserts the found results on the note you're working on. 
 

@@ -3,7 +3,7 @@
   "name": "Search++",
   "version": "0.0.1",
   "repo": "https://github.com/nhaouari/searchpp",
-  "description": "Most of the code is based on the plugin mrj-text-expand-witb-text of MrJackphil with goal of gathering all related information in one note and work on them.",
+  "description": "Allow inserting text context search results on the active note, the plugin is based on the plugin mrj-text-expand-witb-text of MrJackphil.",
   "isDesktopOnly": false,
   "author": "Noureddine Haouari",
   "authorUrl": "https://haouari.com"
